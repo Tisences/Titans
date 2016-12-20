@@ -29,7 +29,7 @@ public class BitmapUtil {
         ScriptIntrinsicBlur blur = ScriptIntrinsicBlur.create(script, Element.U8_4(script));
 
         Allocation allIn = Allocation.createFromBitmap(script,inputBitmap);
-        Allocation allOut = Allocation.createCubemapFromBitmap(script,outputBitmap);
+        Allocation allOut = Allocation.createFromBitmap(script,outputBitmap);
 
         blur.setRadius(radius);
         blur.setInput(allIn);
