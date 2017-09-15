@@ -1,6 +1,5 @@
-package com.tisen.titans.ui;
+package com.tisen.titans.service;
 
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -10,11 +9,10 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Switch;
+import android.widget.Toast;
 
 import com.tisen.titans.R;
-import com.tisen.titans.api.NewsResult;
-import com.tisen.titans.api.NewsServes;
-import com.tisen.titans.utils.DensityUtil;
 import com.tisen.titans.utils.LogUtil;
 
 import org.xutils.view.annotation.ContentView;
@@ -24,19 +22,12 @@ import org.xutils.x;
 import java.util.ArrayList;
 import java.util.List;
 
-import in.srain.cube.views.ptr.PtrClassicDefaultHeader;
 import in.srain.cube.views.ptr.PtrDefaultHandler;
 import in.srain.cube.views.ptr.PtrFrameLayout;
 import in.srain.cube.views.ptr.PtrHandler;
 import in.srain.cube.views.ptr.header.StoreHouseHeader;
-import in.srain.cube.views.ptr.util.PtrLocalDisplay;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observer;
-import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 /**
@@ -44,18 +35,16 @@ import rx.schedulers.Schedulers;
  * Email tisences@qq.com
  */
 @ContentView(R.layout.fragment_new)
-public class NewsFragment extends Fragment {
+public class ControlFragment extends Fragment implements ControlAdapter.OnItemClickListener {
     @ViewInject(R.id.refreshView)
     protected PtrFrameLayout refreshView;
     @ViewInject(R.id.recycleView)
     protected RecyclerView recyclerView;
-    private String type;
-    private NewsServes serves;
-    private List<NewsResult.ResultBean.DataBean> results = new ArrayList<>();
-    private NewsAdapter adapter;
+    private ControlService control;
+    private List<Results.ObjectsBean> results = new ArrayList<>();
+    private ControlAdapter adapter;
 
-    public static final String API = "http://v.juhe.cn/toutiao/";
-    public static final String KEY = "09fb4a737db6fce6c8a1036844ab39f6";
+    public static final String API = "http://192.168.5.123/";
 
     protected long time;
     protected boolean isPrepared;
@@ -72,15 +61,8 @@ public class NewsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = x.view().inject(this, inflater, container);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        adapter = new NewsAdapter(results, getActivity());
-        adapter.setOnItemClickListener(new NewsAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(View view, NewsResult.ResultBean.DataBean dataBean) {
-                Intent intent = new Intent(getActivity(),WebActivity.class);
-                intent.putExtra("url",dataBean.getUrl());
-                startActivity(intent);
-            }
-        });
+        adapter = new ControlAdapter(results);
+        adapter.setOnItemClickListener(this);
         recyclerView.setAdapter(adapter);
         isPrepared = true;
         refreshView.setResistance(1.7f);
@@ -91,14 +73,14 @@ public class NewsFragment extends Fragment {
         refreshView.setKeepHeaderWhenRefresh(true);
 //        PtrClassicDefaultHeader header = new PtrClassicDefaultHeader(getContext());
         StoreHouseHeader header = new StoreHouseHeader(getContext());
-        header.initWithString("S");
-        header.setTextColor(Color.YELLOW);
+        header.initWithString("SERVICE");
+        header.setTextColor(Color.BLUE);
         header.initWithStringArray(R.array.storehouse);
         refreshView.setHeaderView(header);
         refreshView.setPtrHandler(new PtrHandler() {
             @Override
             public boolean checkCanDoRefresh(PtrFrameLayout frame, View content, View header) {
-                return PtrDefaultHandler.checkContentCanBePulledDown(frame,content,header);
+                return PtrDefaultHandler.checkContentCanBePulledDown(frame, content, header);
             }
 
             @Override
@@ -109,9 +91,8 @@ public class NewsFragment extends Fragment {
         return view;
     }
 
-    public void setType(String type, NewsServes serves) {
-        this.type = type;
-        this.serves = serves;
+    public void setService(ControlService serves) {
+        this.control = serves;
     }
 
     @Override
@@ -138,7 +119,7 @@ public class NewsFragment extends Fragment {
                 public void run() {
                     refreshView.autoRefresh(true);
                 }
-            },150);
+            }, 150);
     }
 
     @Override
@@ -154,25 +135,57 @@ public class NewsFragment extends Fragment {
 
     private void reFresh() {
         LogUtil.i("refresh");
-        serves.getNews(KEY, type)
+        control.search("search", 100000000L)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<NewsResult>() {
-            @Override
-            public void onCompleted() {
-                LogUtil.i("onCompleted");
-            }
+                .subscribe(new Observer<Results>() {
+                    @Override
+                    public void onCompleted() {
+                        LogUtil.i("onCompleted");
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-                e.printStackTrace();
-            }
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                    }
 
-            @Override
-            public void onNext(NewsResult newsResult) {
-                refreshView.refreshComplete();
-                adapter.setResults(newsResult.getResult().getData());
-            }
-        });
+                    @Override
+                    public void onNext(Results results) {
+                        refreshView.refreshComplete();
+                        adapter.setResults(results.getObjects());
+                    }
+                });
+    }
+
+    @Override
+    public void onItemClick(final Switch view, String model, final boolean status) {
+        view.setClickable(false);
+        control.set("set", model, status)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Result>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Toast.makeText(getContext(), "网络错误", Toast.LENGTH_SHORT).show();
+                        view.setChecked(!status);
+                        view.setClickable(true);
+                    }
+
+                    @Override
+                    public void onNext(Result result) {
+                        if (result.getResult().equals("successful")) {
+                            view.setChecked(status);
+                        } else {
+                            Toast.makeText(getContext(), "修改失败", Toast.LENGTH_SHORT).show();
+                            view.setChecked(!status);
+                        }
+                        view.setClickable(true);
+                    }
+                });
     }
 }

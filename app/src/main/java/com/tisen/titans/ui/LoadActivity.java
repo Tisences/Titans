@@ -8,15 +8,18 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.graphics.Target;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.jude.rollviewpager.HintView;
 import com.jude.rollviewpager.OnItemClickListener;
 import com.jude.rollviewpager.RollPagerView;
 import com.jude.rollviewpager.adapter.LoopPagerAdapter;
 import com.jude.rollviewpager.adapter.StaticPagerAdapter;
 import com.jude.rollviewpager.hintview.ColorPointHintView;
+import com.jude.rollviewpager.hintview.IconHintView;
 import com.jude.rollviewpager.hintview.TextHintView;
 import com.tisen.titans.R;
 import com.tisen.titans.utils.BitmapUtil;
@@ -35,11 +38,13 @@ public class LoadActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_load);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION|WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         layout = (RelativeLayout) findViewById(R.id.root);
         viewPager = (RollPagerView) findViewById(R.id.rollPagerView);
         viewPager.setHintView(new ColorPointHintView(this,getResources().getColor(R.color.red),getResources().getColor(R.color.grey)));
-        viewPager.setPlayDelay(2000);
-        viewPager.setAdapter(new TestLoopAdapter(viewPager));
+//        viewPager.setPlayDelay(2000);
+        viewPager.setAdapter(new TestLoopAdapter());
+        viewPager.setHintPadding(0,0,50,0);
         viewPager.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(int position) {
@@ -48,17 +53,17 @@ public class LoadActivity extends BaseActivity {
         });
 
     }
-    class TestLoopAdapter extends LoopPagerAdapter{
+    class TestLoopAdapter extends StaticPagerAdapter{
         private String[] imgs = {
-                "http://img.hb.aicdn.com/69f4f8eaf785ed9ab07c7579d6e71e0045bb3bb6a800-Y2VdKg_fw658",
-                "http://img.hb.aicdn.com/286261de80d9c34b8574dfaad6f68022c1e09681ba12-y7e7Uf_fw658",
-                "http://img.hb.aicdn.com/ad3c46028b8247e633b870e1ba9824d685fad8275c689-MySMha_fw658",
-                "http://img.hb.aicdn.com/8f6707fc0d74675c97aeb5f6e2d91997728e8083f0f78-r6Q7Yn_fw658"
+                "http://img.hb.aicdn.com/f9c53d57f3accd00a4c8ff0eb6d52929810359fa356ec-a5Jdbv",
+                "http://img.hb.aicdn.com/9174ac0ba828c7a493fb3b7dd568421dcfe3355227d19-1Q6ayh",
+                "http://img.hb.aicdn.com/436ba9af58cc0cb82304db8d537a2b01ea05d8401acd4-N6hVGA",
+                "http://img.hb.aicdn.com/c39ac6a698b6d95b823d0840a773bdb7f2cc057216dfd-HkHx3k"
         };
         private ImageOptions options = new ImageOptions.Builder().setUseMemCache(true).build();
 
-        public TestLoopAdapter(RollPagerView view){
-            super(view);
+        public TestLoopAdapter(){
+            super();
         }
 
         @Override
@@ -72,7 +77,7 @@ public class LoadActivity extends BaseActivity {
         }
 
         @Override
-        public int getRealCount() {
+        public int getCount() {
             return imgs.length;
         }
     }

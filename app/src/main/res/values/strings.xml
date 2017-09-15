@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Titans</string>
     <string name="manager">管理</string>
+    <string name="amount_text">amount</string>
+    <string name="model_text">model</string>
+    <string name="switch_text">switch</string>
 </resources>
